@@ -2,13 +2,15 @@ import { ui } from 'ui/layaMaxUI';
 
 export class Player extends ui.scenes.playerUI {
     private missile: Laya.Sprite[] = [];
-    private gun = new Laya.Sprite();
     private _uid: any;
     private _uname: any;
     constructor() {
         super();
         this._uid = null;
         this._uname = null;
+    }
+    public onEnable() {
+        this.pivotX = -49;
     }
 
     /*
