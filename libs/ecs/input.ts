@@ -1,16 +1,18 @@
+import { ECS } from './ecs';
+
 // 输入组件
 export class Input {
-    constructor(ecs) {
-        // ecs
+    // ecs
+    protected _ecs: ECS;
+    private _codeMap = new Map();
+
+    // code 集合
+    private _keyCode = {};
+
+    // 输入集合
+    private _inputMap = new Map();
+    constructor(ecs: ECS) {
         this._ecs = ecs;
-
-        // code 集合
-        this._codeMap = new Map();
-
-        this._keyCode = {};
-
-        // 输入集合
-        this._inputMap = new Map();
     }
 
     /*
@@ -22,7 +24,7 @@ export class Input {
 
         this._keyCode = keyCode;
 
-        for (let key of Object.keys(keyCode)) {
+        for (const key of Object.keys(keyCode)) {
             const code = keyCode[key];
 
             this._codeMap.set(code, key);
@@ -42,7 +44,7 @@ export class Input {
      * @param (string) code keycode
      * @return (object) data 输入数据
      */
-    get(code) {
+    public get(code) {
         const data = this._inputMap.get(code);
 
         this.remove(code);
@@ -54,7 +56,7 @@ export class Input {
      * 获取所有
      * @return (object) inputMap 输入集合
      */
-    getAll() {
+    public getAll() {
         return this._inputMap;
     }
 
@@ -63,7 +65,7 @@ export class Input {
      * @param (string) code keycode
      * @param (object) data 输入数据
      */
-    set(code, data) {
+    public set(code, data) {
         if (!this._codeMap.has(code)) {
             console.warn('Key Code does not exist using the name');
 
@@ -80,7 +82,7 @@ export class Input {
      * @param (string) code keycode
      * @return (boolean) isExist keycode是否存在
      */
-    has(code) {
+    public has(code) {
         return this._inputMap.has(code);
     }
 
@@ -88,12 +90,12 @@ export class Input {
      * 移除
      * @param (string) code keycode
      */
-    remove(code) {
+    public remove(code) {
         this._inputMap.delete(code);
     }
 
     // 清空
-    clear() {
+    public clear() {
         this._keyCode = null;
 
         this._codeMap.clear();

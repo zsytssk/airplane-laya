@@ -1,22 +1,21 @@
 // 实体管理器
 export class EntityManager {
+    private _ecs: any;
+    // 实体集合
+    private _entityMaps: Map<string, any> = new Map();
+    // 脏标记集合
+    private _dirtyMaps: Map<string, any> = new Map();
     constructor(ecs) {
         // ecs
         this._ecs = ecs;
-
-        // 实体集合
-        this._entityMaps = new Map();
-
-        // 脏标记集合
-        this._dirtyMaps = new Map();
     }
 
     /*
      * 检查是否已注册
      * @param {string} entityName 实体名
      * @return {boolean} isRegister 是否已注册
-     */ 
-    _preRegister(entityName) {
+     */
+    public _preRegister(entityName) {
         if (this.getMap(entityName)) {
             return true;
         }
@@ -29,7 +28,7 @@ export class EntityManager {
      * @param {string} entityName 实体名
      * @return {object} this chain
      */
-    register(entityName) {
+    public register(entityName) {
         if (arguments.length > 1) {
             return this.registerMany(Array.from(arguments));
         }
@@ -39,7 +38,7 @@ export class EntityManager {
         }
 
         if (this._preRegister(entityName)) {
-            return this;   
+            return this;
         }
 
         if (typeof entityName !== 'string') {
@@ -61,7 +60,7 @@ export class EntityManager {
      * @param {array} entityNames 实体名
      * @return {object} this chain
      */
-    registerMany(entityNames) {
+    public registerMany(entityNames) {
         if (!Array.isArray(entityNames)) {
             console.warn('The entity names parameter must be an array');
 
@@ -69,12 +68,14 @@ export class EntityManager {
         }
 
         if (entityNames.length < 1) {
-            console.warn('The entity names array must contain at least one entityName to register');
+            console.warn(
+                'The entity names array must contain at least one entityName to register',
+            );
 
             return this;
         }
 
-        entityNames.map((entityName) => {
+        entityNames.map(entityName => {
             this.register(entityName);
         });
 
@@ -86,7 +87,7 @@ export class EntityManager {
      * @param {string} entityName 实体名
      * @return {object} entityMap 实体集合
      */
-    getMap(entityName) {
+    public getMap(entityName) {
         return this._entityMaps.get(entityName);
     }
 
@@ -96,7 +97,7 @@ export class EntityManager {
      * @param {string} entityId 实体ID
      * @return {object} entity 实体
      */
-    get(entityName, entityId) {
+    public get(entityName, entityId) {
         const entityMap = this.getMap(entityName);
 
         if (entityMap === undefined) {
@@ -114,7 +115,7 @@ export class EntityManager {
      * @param {array} compClasses 组件类
      * @return {array} entitys 实体
      */
-    filter(entityName, compClasses = []) {
+    public filter(entityName, compClasses = []) {
         if (!Array.isArray(compClasses)) {
             console.warn('Component Classes must be an array');
 
@@ -132,7 +133,7 @@ export class EntityManager {
         const entitys = [];
 
         for (let entity of entityMap.values()) {
-            const result = compClasses.filter((compClass) => {
+            const result = compClasses.filter(compClass => {
                 return this._ecs.componentManager.has(compClass, entity.id);
             });
 
@@ -149,7 +150,7 @@ export class EntityManager {
      * @param {string} entityName 实体名
      * @return {object} entity 实体
      */
-    first(entityName) {
+    public first(entityName) {
         const entityMap = this.getMap(entityName);
 
         if (entityMap === undefined) {
@@ -158,7 +159,7 @@ export class EntityManager {
             return;
         }
 
-        if (entityMap.size === 0){
+        if (entityMap.size === 0) {
             return undefined;
         }
 
@@ -175,7 +176,7 @@ export class EntityManager {
      * @param {object} data 数据
      * @return {array} entitys 实体
      */
-    find(entityName, compClass, data) {
+    public find(entityName, compClass, data) {
         const entityMap = this.getMap(entityName);
 
         if (entityMap === undefined) {
@@ -189,7 +190,7 @@ export class EntityManager {
         for (let entity of entityMap.values()) {
             if (entity.hasComp(compClass)) {
                 let isMatch = true;
-                const comp = entity.getComp(compClass)
+                const comp = entity.getComp(compClass);
 
                 for (let key in data) {
                     if (!(comp[key] && comp[key] === data[key])) {
@@ -213,7 +214,7 @@ export class EntityManager {
      * @param {object} entity 实体实例
      * @return {object} entity 实体
      */
-    set(entity) {
+    public set(entity) {
         this.register(entity.name);
 
         const entityMap = this.getMap(entity.name);
@@ -235,7 +236,7 @@ export class EntityManager {
      * @param {string} entityId 实体ID
      * @return {boolean} isExist 实体是否存在
      */
-    has(entityName, entityId) {
+    public has(entityName, entityId) {
         const entityMap = this.getMap(entityName);
 
         if (entityMap === undefined) {
@@ -252,7 +253,7 @@ export class EntityManager {
      * @param {object} entity 实体实例
      * @return {boolean} isExist 实体是否存在
      */
-    hasEntity(entity) {
+    public hasEntity(entity) {
         return this.has(entity.name, entity.id);
     }
 
@@ -262,7 +263,7 @@ export class EntityManager {
      * @param {string} entityId 实体ID
      * @return {object} this chain
      */
-    destroy(entityName, entityId) {
+    public destroy(entityName, entityId) {
         const entityMap = this.getMap(entityName);
 
         if (entityMap === undefined) {
@@ -287,7 +288,7 @@ export class EntityManager {
      * @param {object} entity 实体实例
      * @return {object} this chain
      */
-    destroyEntity(entity) {
+    public destroyEntity(entity) {
         this.destroy(entity.name, entity.id);
 
         return this;
@@ -297,7 +298,7 @@ export class EntityManager {
      * 清空实体
      * @return {object} this chain
      */
-    clear() {
+    public clear() {
         for (let entityMap of this._entityMaps.values()) {
             for (let entity of entityMap.values()) {
                 this._ecs.componentManager.clear(entity.id);
@@ -314,7 +315,7 @@ export class EntityManager {
     }
 
     // 获取脏标记
-    getDirty() {
+    public getDirty() {
         const dirty = new Map();
 
         for (const [entityId, comps] of this._dirtyMaps.entries()) {
@@ -327,7 +328,7 @@ export class EntityManager {
                     arr.push(`${compName}@${attrs}`);
                 }
             }
-            
+
             dirty.set(entityId, arr);
         }
 
@@ -342,7 +343,7 @@ export class EntityManager {
      * @param {string} compName 组件名称
      * @param {array} attrs 属性
      */
-    setDirty(entityTag, compName, attrs = 'all') {
+    public setDirty(entityTag, compName, attrs = 'all') {
         let comps = null;
 
         if (this._dirtyMaps.has(entityTag)) {
@@ -372,9 +373,9 @@ export class EntityManager {
 
     /*
      * 清空脏标记
-     * @return {object} this chain 
+     * @return {object} this chain
      */
-    clearDirty() {
+    public clearDirty() {
         this._dirtyMaps.clear();
     }
 }

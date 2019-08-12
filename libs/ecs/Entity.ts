@@ -1,6 +1,9 @@
 // 实体基类
 export function createEntityClass(ecs) {
     return class BaseEntity {
+        protected _ecs;
+        protected _name: string;
+        protected _uniqueId: string;
         constructor(entityName = 'default') {
             this._ecs = ecs;
 
@@ -31,7 +34,7 @@ export function createEntityClass(ecs) {
         }
 
         // 销毁
-        destroy() {
+        public destroy() {
             this.clearComps();
 
             this._ecs = null;
@@ -42,7 +45,7 @@ export function createEntityClass(ecs) {
          * @param {function | string} compClass 组件类 | 组件名
          * @return {object} comp 当前组件
          */
-        getComp(compClass) {
+        public getComp(compClass) {
             return this._ecs.componentManager.get(compClass, this._uniqueId);
         }
 
@@ -50,7 +53,7 @@ export function createEntityClass(ecs) {
          * 获取所有组件
          * @return (array) comps 所有组件
          */
-        getComps() {
+        public getComps() {
             return this._ecs.componentManager.getAll(this._uniqueId);
         }
 
@@ -60,14 +63,12 @@ export function createEntityClass(ecs) {
          * @param {object} state 状态
          * @param {boolean} hasDiff 是否开启比对
          */
-        setCompsState(compClass, state, hasDiff = true) {
+        public setCompsState(compClass, state, hasDiff = true) {
             const attrs = [];
 
             const comp = this.getComp(compClass);
 
             if (!!comp) {
-                let isDirty = false;
-
                 for (const key in state) {
                     if (comp.hasOwnProperty(key)) {
                         let isDiff = false;
@@ -76,9 +77,10 @@ export function createEntityClass(ecs) {
                         const newVal = state[key];
 
                         if (typeof oldVal === typeof newVal) {
-                            switch(typeof oldVal) {
+                            switch (typeof oldVal) {
                                 case 'array':
-                                    isDiff = oldVal.toString() !== newVal.toString();
+                                    isDiff =
+                                        oldVal.toString() !== newVal.toString();
 
                                     break;
                                 case 'object':
@@ -96,8 +98,6 @@ export function createEntityClass(ecs) {
                             comp[key] = newVal;
 
                             attrs.push(key);
-
-                            isDirty = true;
                         }
                     }
                 }
@@ -107,7 +107,11 @@ export function createEntityClass(ecs) {
             if (attrs.length) {
                 const compName = this._ecs.getClassName(compClass);
 
-                this._ecs.entityManager.setDirty(`${this._name}@${this._uniqueId}`, compName, attrs);
+                this._ecs.entityManager.setDirty(
+                    `${this._name}@${this._uniqueId}`,
+                    compName,
+                    attrs,
+                );
             }
         }
 
@@ -116,7 +120,7 @@ export function createEntityClass(ecs) {
          * @param {function | string} compClass 组件类 | 组件名
          * @return (boolean) isExist 组件是否存在
          */
-        hasComp(compClass) {
+        public hasComp(compClass) {
             return this._ecs.componentManager.has(compClass, this._uniqueId);
         }
 
@@ -125,11 +129,14 @@ export function createEntityClass(ecs) {
          * @param {object} comp 组件实例
          * @return {object} this chain
          */
-        addComp(comp) {
+        public addComp(comp) {
             this._ecs.componentManager.set(comp, this._uniqueId);
 
             // 添加脏标记
-            this._ecs.entityManager.setDirty(`${this._name}@${this._uniqueId}`, comp.constructor.name);
+            this._ecs.entityManager.setDirty(
+                `${this._name}@${this._uniqueId}`,
+                comp.constructor.name,
+            );
 
             return this;
         }
@@ -139,7 +146,7 @@ export function createEntityClass(ecs) {
          * @param {function | string} compClass 组件类 | 组件名
          * @return {object} this chain
          */
-        removeComp(compClass) {
+        public removeComp(compClass) {
             this._ecs.componentManager.remove(compClass, this._uniqueId);
 
             return this;
@@ -149,10 +156,10 @@ export function createEntityClass(ecs) {
          * 清空组件
          * @return {object} this chain
          */
-        clearComps() {
+        public clearComps() {
             this._ecs.componentManager.clear(this._uniqueId);
 
             return this;
         }
-    }
-};
+    };
+}

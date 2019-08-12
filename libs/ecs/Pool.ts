@@ -1,14 +1,18 @@
+import { ECS } from './ecs';
+
 // 对象池
 export class Pool {
-    constructor(ecs) {
+    // ecs
+    private _ecs: ECS;
+
+    // 对象池集合
+    private _poolMap = new Map();
+
+    // 允许缓存的最大数量
+    private _maxCount = 600;
+    constructor(ecs: ECS) {
         // ecs
         this._ecs = ecs;
-
-        // 对象池集合
-        this._poolMap = new Map();
-
-        // 允许缓存的最大数量
-        this._maxCount = 600;
     }
 
     /*
@@ -28,7 +32,7 @@ export class Pool {
      * @param (string) sign 标识
      * @return (object) item 对象
      */
-    get(sign) {
+    public get(sign) {
         const pool = this.getPool(sign);
         const item = pool.length ? pool.shift() : null;
 
@@ -44,11 +48,11 @@ export class Pool {
      * @param (string) sign 标识
      * @param (function) cls 类
      */
-    getByClass(sign, cls) {
+    public getByClass(sign, cls) {
         const pool = this.getPool(sign);
         const item = pool.length ? pool.shift() : new cls();
 
-        item["__InPool"] = false;
+        item['__InPool'] = false;
 
         return item;
     }
@@ -58,7 +62,7 @@ export class Pool {
      * @param (string) sign 标识
      * @param (object) item 对象
      */
-    put(sign, item) {
+    public put(sign, item) {
         if (item['__InPool']) {
             return;
         }
@@ -77,7 +81,7 @@ export class Pool {
      * @param (string) sign 标识
      * @return (number) nums 可用对象数量
      */
-    size(sign) {
+    public size(sign) {
         let nums = 0;
 
         if (this._poolMap.has(sign)) {
@@ -94,7 +98,7 @@ export class Pool {
      * @param (string) sign 标识
      * @return (array) pool 对象池
      */
-    getPool(sign) {
+    public getPool(sign) {
         let pool = this._poolMap.get(sign);
 
         if (!Array.isArray(pool)) {
@@ -110,7 +114,7 @@ export class Pool {
      * 清除对象池的对象，并移除对象池
      * @param (string) sign 标识
      */
-    clearBySign(sign) {
+    public clearBySign(sign) {
         if (this._poolMap.has(sign)) {
             const pool = this.getPool(sign);
 
@@ -121,8 +125,8 @@ export class Pool {
     }
 
     // 清楚所有对象池的对象，并移除所有对象池
-    clear() {
-        for (let pool of this._poolMap.values()) {
+    public clear() {
+        for (const pool of this._poolMap.values()) {
             pool.length = 0;
         }
 

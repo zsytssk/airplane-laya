@@ -70,7 +70,7 @@ export class WorkerManager {
 
         listener.set(cmd, [fun]);
 
-        worker.onmessage = (message) => {
+        worker.onmessage = message => {
             const data = message.data;
 
             for (const [cmd, funs] of listener) {
@@ -84,7 +84,7 @@ export class WorkerManager {
 
         this._workerMap.set(name, {
             worker,
-            listener
+            listener,
         });
     }
 
@@ -127,7 +127,7 @@ export class WorkerManager {
      * @param (string) name 名称
      * @return (object) worker 当前worker
      */
-    get(name) {;
+    get(name) {
         return this._workerMap.get(name);
     }
 
@@ -153,7 +153,7 @@ export class WorkerManager {
         const worker = this.get(name).worker;
 
         worker.postMessage({
-            cmd: 'stop'
+            cmd: 'stop',
         });
 
         this._workerMap.delete(name);
@@ -163,7 +163,7 @@ export class WorkerManager {
     closeAll() {
         for (const { worker } of this._workerMap.values()) {
             worker.postMessage({
-                cmd: 'stop'
+                cmd: 'stop',
             });
         }
 

@@ -1,55 +1,52 @@
-import worker from '../ecs/worker.ecs.js';
-import { Mediator } from '../ecs/Mediator.ecs.js';
+import worker from './worker';
+import { Mediator } from './Mediator';
 
-import { Input } from '../ecs/Input.ecs.js';
+import { Input } from './input';
 
-import { Pool } from '../ecs/Pool.ecs.js';
+import { Pool } from './Pool';
 
-import { WorkerManager } from '../ecs/WorkerManager.ecs.js';
+import { WorkerManager } from './WorkerManager';
 
-import { ComponentManager } from '../ecs/ComponentManager.ecs.js';
-import { createComponentClass } from '../ecs/Component.ecs.js';
+import { ComponentManager } from './ComponentManager';
+import { createComponentClass } from './Component';
 
-import { EntityManager } from '../ecs/EntityManager.ecs.js';
-import { createEntityClass } from '../ecs/Entity.ecs.js';
+import { EntityManager } from './EntityManager';
+import { createEntityClass } from './Entity';
 
-import { SystemManager } from '../ecs/SystemManager.ecs.js';
-import { createSystemClass } from '../ecs/System.ecs.js';
+import { SystemManager } from './SystemManager';
+import { createSystemClass } from './System';
 
-class ECS {
-    constructor() {
-        // UI
-        this._ui = null;
+export class ECS {
+    // UI
+    public _ui = null;
+    // worker
+    public worker = worker;
+    // 中介
+    public mediator = new Mediator(this);
 
-        // worker
-        this.worker = worker;
-        // 中介
-        this.mediator = new Mediator(this);
+    // 输入
+    public input = new Input(this);
 
-        // 输入
-        this.input = new Input(this);
+    // 对象池
+    public pool = new Pool(this);
 
-        // 对象池
-        this.pool = new Pool(this);
+    // worker管理器
+    public workerManager = new WorkerManager(this);
 
-        // worker管理器
-        this.workerManager = new WorkerManager();
+    // 组件管理器
+    public componentManager = new ComponentManager(this);
+    // 组件类
+    public Component = createComponentClass(this);
 
-        // 组件管理器
-        this.componentManager = new ComponentManager(this);
-        // 组件类
-        this.Component = createComponentClass(this);
+    // 实体管理器
+    public entityManager = new EntityManager(this);
+    // 实体类
+    public Entity = createEntityClass(this);
 
-        // 实体管理器
-        this.entityManager = new EntityManager(this);
-        // 实体类
-        this.Entity = createEntityClass(this);
-
-        // 系统管理器
-        this.systemManager = new SystemManager(this);
-        // 系统类
-        this.System = createSystemClass(this);
-    }
+    // 系统管理器
+    public systemManager = new SystemManager(this);
+    // 系统类
+    public System = createSystemClass(this);
 
     /*
      * 设置UI
@@ -74,7 +71,7 @@ class ECS {
      * @param {object} Systems 系统类列表
      * @param {object} keyCode 输入码
      */
-    init({ ui, Workers, Systems, keyCode }) {
+    public init({ ui, Workers, Systems, keyCode }) {
         if (!!ui) {
             this._ui = ui;
         }
@@ -85,12 +82,18 @@ class ECS {
 
         if (!!Workers) {
             for (const name in Workers) {
+                if (!Workers.hasOwnProperty(name)) {
+                    continue;
+                }
                 this.workerManager.register(name, Workers[name]);
             }
         }
 
         if (!!Systems) {
             for (const name in Systems) {
+                if (!Systems.hasOwnProperty(name)) {
+                    continue;
+                }
                 this.systemManager.register(new Systems[name]());
             }
         }
@@ -100,14 +103,14 @@ class ECS {
      * 更新
      * @param {number} dt 帧间隔时间
      */
-    update(dt) {
+    public update(dt: number) {
         this.mediator.update(dt);
 
         this.systemManager.update(dt);
     }
 
     // 销毁
-    destroy() {
+    public destroy() {
         this.ui = null;
 
         this.systemManager.clear();
@@ -126,7 +129,7 @@ class ECS {
      * @param {function | string} systemClass 系统类 | 系统类名
      * @param {object} data 数据
      */
-    send(systemClass, data) {
+    public send(systemClass, data) {
         const system = this.systemManager.get(systemClass);
 
         system.onReceive(data);
@@ -137,7 +140,7 @@ class ECS {
      * @param {function | string} ecsClass 类 | 类名
      * @return {string} className 类名
      */
-    getClassName(ecsClass) {
+    public getClassName(ecsClass) {
         const className =
             typeof ecsClass === 'function' ? ecsClass.name : ecsClass;
 
@@ -148,7 +151,7 @@ class ECS {
      * 获取uuid
      * @return {string} uuid 唯一标识
      */
-    getUUID() {
+    public getUUID() {
         const s = [];
         const hexDigits = '0123456789abcdef';
         for (let i = 0; i < 36; i++) {

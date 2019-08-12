@@ -1,18 +1,21 @@
+import { ECS } from './ecs';
+
 // 系统基类
 export function createSystemClass(ecs) {
     return class BaseSystem {
-        constructor(world) {
-            // ecs
-            this._ecs = ecs;
-            // world
-            this._world = world;
+        // ecs
+        protected _ecs = ecs;
+        // world
+        protected _world: any;
 
-            // 运行状态
-            this._started = false;
-            // 锁定状态
-            this._locked = false;
-            // 激活状态
-            this._enabled = true;
+        // 运行状态
+        protected _started = false;
+        // 锁定状态
+        protected _locked = false;
+        // 激活状态
+        protected _enabled = true;
+        constructor(world: any) {
+            this._world = world;
         }
 
         /*
@@ -57,7 +60,9 @@ export function createSystemClass(ecs) {
          */
         set enabled(val) {
             if (this._locked) {
-                console.warn('Cannot change the enabled value when the system is updating.');
+                console.warn(
+                    'Cannot change the enabled value when the system is updating.',
+                );
 
                 return;
             }
@@ -76,13 +81,13 @@ export function createSystemClass(ecs) {
         }
 
         // 系统内部初始化
-        initialize() {
+        public initialize() {
             this.onLoad();
             this.onEnable();
         }
 
         // 系统内部卸载
-        uninitialize() {
+        public uninitialize() {
             this._ecs = null;
 
             this.onDestroy();
@@ -92,7 +97,7 @@ export function createSystemClass(ecs) {
          * 系统内部更新
          * @param (number) dt 帧间隔时间
          */
-        update(dt) {
+        public update(dt: number) {
             if (!this._started || !this._enabled) {
                 return;
             }
@@ -108,7 +113,7 @@ export function createSystemClass(ecs) {
          * 系统内部更新
          * @param (number) dt 帧间隔时间
          */
-        lateUpdate(dt) {
+        public lateUpdate(dt) {
             if (!this._started || !this._enabled) {
                 return;
             }
@@ -124,37 +129,37 @@ export function createSystemClass(ecs) {
          * 系统内部收到消息时调用
          * @param (object) data 数据
          */
-        receive(data) {
+        public receive(data) {
             this.onReceive(data);
         }
 
         // 系统初始化时调用
-        onLoad() {}
+        public onLoad() {}
 
         // 系统开始运行时调用
-        onStart() {}
+        public onStart() {}
 
         /*
          * 系统更新时调用
          * @param (number) dt 帧间隔时间
          */
-        onUpdate(dt) {}
+        public onUpdate(dt) {}
 
-        onLateUpdate(dt) {}
+        public onLateUpdate(dt) {}
 
         // 系统被激活时调用
-        onEnable() {}
+        public onEnable() {}
 
         // 系统被禁用时调用
-        onDisable() {}
+        public onDisable() {}
 
         // 系统被注销时调用
-        onDestroy() {}
+        public onDestroy() {}
 
         /*
          * 系统收到消息时调用
          * @param (object) data 数据
          */
-        onReceive(data) {}
-    }
-};
+        public onReceive(data) {}
+    };
+}

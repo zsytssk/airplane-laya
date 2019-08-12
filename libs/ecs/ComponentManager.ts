@@ -1,5 +1,7 @@
 // 组件管理器
 export class ComponentManager {
+    private _ecs: any;
+    private _compMaps: Map<string, any>;
     constructor(ecs) {
         // ecs
         this._ecs = ecs;
@@ -13,7 +15,7 @@ export class ComponentManager {
      * @param (function) compClass 组件类
      * @return (boolean) isRegister 是否已注册
      */
-    _preRegister(compClass) {
+    public _preRegister(compClass) {
         if (this.getMap(compClass)) {
             return true;
         }
@@ -25,7 +27,7 @@ export class ComponentManager {
      * 注册组件
      * @param (function) compClass 组件类
      */
-    register(compClass) {
+    public register(compClass) {
         if (this._preRegister(compClass)) {
             return;
         }
@@ -33,7 +35,9 @@ export class ComponentManager {
         const compName = compClass.name;
 
         if (compName === undefined) {
-            console.warn('The component type does not have a name defined. i.e. a constructor name');
+            console.warn(
+                'The component type does not have a name defined. i.e. a constructor name',
+            );
 
             return;
         }
@@ -49,7 +53,7 @@ export class ComponentManager {
      * @param (function | string) compClass 组件类 | 组件名
      * @return (object) compMap 当前组件集合
      */
-    getMap(compClass) {
+    public getMap(compClass) {
         const compName = this._ecs.getClassName(compClass);
 
         return this._compMaps.get(compName);
@@ -61,11 +65,10 @@ export class ComponentManager {
      * @param (string) entityId 实体ID
      * @return (object) comp 当前组件
      */
-    get(compClass, entityId) {
+    public get(compClass, entityId) {
         const compMap = this.getMap(compClass);
 
         if (compMap === undefined) {
-
             return;
         }
 
@@ -77,10 +80,10 @@ export class ComponentManager {
      * @param (string) entityId 实体ID
      * @return (array) comps 所有组件
      */
-    getAll(entityId) {
+    public getAll(entityId) {
         const comps = [];
 
-        for (let compMap of this._compMaps.values()) {
+        for (const compMap of this._compMaps.values()) {
             if (compMap.has(entityId)) {
                 const comp = compMap.get(entityId);
 
@@ -96,7 +99,7 @@ export class ComponentManager {
      * @param (object) comp 组件实例
      * @param (string) entityId 实体ID
      */
-    set(comp, entityId) {
+    public set(comp, entityId) {
         this.register(comp.constructor);
 
         const compMap = this.getMap(comp.constructor);
@@ -116,7 +119,7 @@ export class ComponentManager {
      * @param (string) entityId 实体ID
      * @return (boolean) hasComp 是否存在
      */
-    has(compClass, entityId) {
+    public has(compClass, entityId) {
         const compMap = this.getMap(compClass);
 
         if (compMap === undefined) {
@@ -133,7 +136,7 @@ export class ComponentManager {
      * @param (function | string) compClass 组件类 | 组件名
      * @param (string) entityId 实体ID
      */
-    remove(compClass, entityId) {
+    public remove(compClass, entityId) {
         const compMap = this.getMap(compClass);
 
         if (compMap === undefined) {
@@ -149,16 +152,16 @@ export class ComponentManager {
      * 清空组件
      * @param (string) entityId 实体ID
      */
-    clear(entityId) {
-        for (let compMap of this._compMaps.values()) {
+    public clear(entityId) {
+        for (const compMap of this._compMaps.values()) {
             this._destroy(compMap, entityId);
         }
     }
 
     // 清空所有组件
-    clearAll() {
-        for (let compMap of this._compMaps.values()) {
-            for (let comp of compMap.values()) {
+    public clearAll() {
+        for (const compMap of this._compMaps.values()) {
+            for (const comp of compMap.values()) {
                 comp.destroy();
             }
 
@@ -173,7 +176,7 @@ export class ComponentManager {
      * @param (object) compMap 组件集合
      * @param (string) entityId 实体ID
      */
-    _destroy(compMap, entityId) {
+    public _destroy(compMap, entityId) {
         if (compMap.has(entityId)) {
             const comp = compMap.get(entityId);
             comp.destroy();

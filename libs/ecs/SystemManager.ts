@@ -1,13 +1,17 @@
+import { ECS } from './ecs';
+
 // 系统管理器
 export class SystemManager {
+    // ecs
+    private _ecs: ECS;
+
+    // 系统集合
+    private _systemMap = new Map();
+    // 当前运行系统
+    private _currentSystem = null;
     constructor(ecs) {
         // ecs
         this._ecs = ecs;
-
-        // 系统集合
-        this._systemMap = new Map();
-        // 当前运行系统
-        this._currentSystem = null;
     }
 
     /*
@@ -15,7 +19,7 @@ export class SystemManager {
      * @param (function) systemClass 系统类
      * @return (boolean) isRegister 是否已注册
      */
-    _preRegister(systemClass) {
+    private _preRegister(systemClass) {
         if (this.has(systemClass)) {
             console.warn('The system has been registered.');
 
@@ -29,7 +33,7 @@ export class SystemManager {
      * 注册系统
      * @param (object) system 系统实例
      */
-    register(system) {
+    public register(system) {
         if (this._preRegister(system.constructor)) {
             return this;
         }
@@ -48,7 +52,7 @@ export class SystemManager {
      * @param (object) system 系统实例
      * @param (function) beforeSystemClass 系统类
      */
-    registerBefore(system, beforeSystemClass) {
+    public registerBefore(system, beforeSystemClass) {
         if (this._preRegister(system.constructor)) {
             return this;
         }
@@ -83,7 +87,7 @@ export class SystemManager {
      * @param (object) system 系统实例
      * @param (function) afterSystemClass 系统类
      */
-    registerAfter(system, afterSystemClass) {
+    public registerAfter(system, afterSystemClass) {
         if (this._preRegister(system.constructor)) {
             return this;
         }
@@ -118,7 +122,7 @@ export class SystemManager {
      * @param (function | string) systemClass 系统类 | 系统名
      * @return (object) system 当前系统
      */
-    get(systemClass) {
+    public get(systemClass) {
         const systemName = this._ecs.getClassName(systemClass);
         return this._systemMap.get(systemName);
     }
@@ -127,7 +131,7 @@ export class SystemManager {
      * 获取所有系统
      * @return (array) systems 所有系统
      */
-    getAll() {
+    public getAll() {
         const systems = [];
 
         for (let system of this._systemMap.values()) {
@@ -141,7 +145,7 @@ export class SystemManager {
      * 检测系统是否存在
      * @param (function | string) systemClass 系统类 | 系统名
      */
-    has(systemClass) {
+    public has(systemClass) {
         const systemName = this._ecs.getClassName(systemClass);
 
         return this._systemMap.has(systemName);
@@ -151,7 +155,7 @@ export class SystemManager {
      * 激活系统
      * @param (function | string) systemClass 系统类 | 系统名
      */
-    enable(systemClass) {
+    public enable(systemClass) {
         const system = this.get(systemClass);
 
         if (system === undefined) {
@@ -167,7 +171,7 @@ export class SystemManager {
      * 禁用系统
      * @param (function | string) systemClass 系统类 | 系统名
      */
-    disable(systemClass) {
+    public disable(systemClass) {
         const system = this.get(systemClass);
 
         if (system === undefined) {
@@ -183,7 +187,7 @@ export class SystemManager {
      * 移除系统
      * @param (function | string) systemClass 系统类 | 系统名
      */
-    remove(systemClass) {
+    public remove(systemClass) {
         const system = this.get(systemClass);
 
         if (system === undefined) {
@@ -200,7 +204,7 @@ export class SystemManager {
     }
 
     // 清空系统
-    clear() {
+    public clear() {
         for (const [systemName, system] of this._systemMap) {
             if (system) {
                 system.uninitialize();
@@ -214,7 +218,7 @@ export class SystemManager {
      * 更新系统
      * @param (number) dt 帧间隔时间
      */
-    update(dt) {
+    public update(dt: number) {
         for (const [systemName, system] of this._systemMap) {
             if (system && system.enabled && !system.started) {
                 this._currentSystem = system;

@@ -1,18 +1,17 @@
 import ecs from 'ecs/ecs';
 import Systems from 'game/systems.game';
-import { Player } from './player';
-import { PoolManager } from './Pool.manager';
 import { Honor } from 'honor';
-import { keycode, basic } from './config';
 import { ui } from 'ui/layaMaxUI';
+import { basic, keycode } from './config';
+import { bulletUI, enemyUI, Player } from './item';
+import { PoolManager } from './Pool.manager';
 
 export default class GameScene extends ui.scenes.gameUI {
     private _ammoMap: Map<string, Laya.Sprite>;
     private _enemyMap: Map<string, Laya.Sprite>;
     private player = new Player();
-    private _basic: any;
-    private bulletPool = new PoolManager(ui.scenes.bulletUI);
-    private enemyPool = new PoolManager(ui.scenes.enemyUI);
+    private bulletPool = new PoolManager(bulletUI);
+    private enemyPool = new PoolManager(enemyUI);
     private panel = new Laya.Box();
     constructor() {
         super();
