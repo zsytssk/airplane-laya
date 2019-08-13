@@ -1,5 +1,7 @@
+import { Component } from 'ecs/ecs';
+
 // 弹药属性
-export default class BasicsProp extends ecs.Component {
+export default class BasicsProp extends Component {
     static get name() {
         return 'BasicsProp';
     }
@@ -16,7 +18,7 @@ export default class BasicsProp extends ecs.Component {
         level = 1,
         healthPoint = 100,
         maxHealthPoint = 100,
-        model = 1
+        model = 1,
     } = {}) {
         super();
 

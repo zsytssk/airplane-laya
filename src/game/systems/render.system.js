@@ -1,19 +1,15 @@
 // 组件
-import Components from '../components.game.js';
+import { System } from 'ecs/ecs';
 // 渲染
 import render from '../render.game.js';
 
 // 渲染
-export default class RenderSystem extends ecs.System {
+export default class RenderSystem extends System {
     static get name() {
         return 'RenderSystem';
     }
 
-    constructor() {
-        super();
-    }
-
-    onLoad() { }
+    onLoad() {}
 
     onUpdate(dt) {
         const dirtyMap = this._ecs.entityManager.getDirty();
@@ -21,12 +17,14 @@ export default class RenderSystem extends ecs.System {
 
         if (dirtyMap.size) {
             for (const [tag, comps] of dirtyMap.entries()) {
-
                 const data = tag.split('@');
                 const entityName = data[0];
                 const entityId = data[1];
 
-                const entity = this._ecs.entityManager.get(entityName, entityId);
+                const entity = this._ecs.entityManager.get(
+                    entityName,
+                    entityId,
+                );
 
                 if (!!entity) {
                     if (!entitysMap.has(entityName)) {
@@ -43,7 +41,10 @@ export default class RenderSystem extends ecs.System {
                 for (const [entityName, entitys] of entitysMap) {
                     const funName = `update${entityName}UI`;
 
-                    if (entitys.size && this.__proto__.hasOwnProperty(funName)) {
+                    if (
+                        entitys.size &&
+                        this.__proto__.hasOwnProperty(funName)
+                    ) {
                         this[funName](entitys);
 
                         entitys.clear();
@@ -65,8 +66,8 @@ export default class RenderSystem extends ecs.System {
      */
     hasComps(comp, comps) {
         if (Array.isArray(comp)) {
-            const result = comp.filter((name) => {
-                const index = comps.findIndex((val) => {
+            const result = comp.filter(name => {
+                const index = comps.findIndex(val => {
                     return val.indexOf(name) !== -1;
                 });
 
@@ -75,7 +76,7 @@ export default class RenderSystem extends ecs.System {
 
             return result.length === comp.length;
         } else if (typeof comp === 'string') {
-            const index = comps.findIndex((val) => {
+            const index = comps.findIndex(val => {
                 return val.indexOf(comp) !== -1;
             });
 
@@ -87,12 +88,12 @@ export default class RenderSystem extends ecs.System {
      * 获取组件属性
      * @param {array} comp 组件名
      * @param {array} comps 组件名称列表
-     * @return {array} attrs 属性 
+     * @return {array} attrs 属性
      */
     gasCompAttrs(comp, comps) {
         let attrs = null;
 
-        const index = comps.findIndex((val) => {
+        const index = comps.findIndex(val => {
             return val.indexOf(comp) !== -1;
         });
 

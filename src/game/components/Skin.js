@@ -1,9 +1,11 @@
+import { Component } from 'ecs/ecs';
+
 // 皮肤
-export default class Skin extends ecs.Component {
-	static get name() {
+export default class Skin extends Component {
+    static get name() {
         return 'Skin';
     }
-    
+
     /*
      * @param (object) texture 纹理名称
      */

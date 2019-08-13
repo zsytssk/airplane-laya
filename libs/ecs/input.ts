@@ -1,6 +1,6 @@
 import { ECS } from './ecs';
 
-// 输入组件
+/** 输入组件 */
 export class Input {
     // ecs
     protected _ecs: ECS;

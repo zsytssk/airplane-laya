@@ -1,15 +1,14 @@
 import { ECS } from './ecs';
+import { System } from './System';
 
-// 系统管理器
+/** 系统管理器 */
 export class SystemManager {
     // ecs
     private _ecs: ECS;
 
     // 系统集合
-    private _systemMap = new Map();
-    // 当前运行系统
-    private _currentSystem = null;
-    constructor(ecs) {
+    private _systemMap: Map<string, System> = new Map();
+    constructor(ecs: ECS) {
         // ecs
         this._ecs = ecs;
     }
@@ -19,7 +18,7 @@ export class SystemManager {
      * @param (function) systemClass 系统类
      * @return (boolean) isRegister 是否已注册
      */
-    private _preRegister(systemClass) {
+    private _preRegister(systemClass: Ctor<System>) {
         if (this.has(systemClass)) {
             console.warn('The system has been registered.');
 
@@ -33,8 +32,8 @@ export class SystemManager {
      * 注册系统
      * @param (object) system 系统实例
      */
-    public register(system) {
-        if (this._preRegister(system.constructor)) {
+    public register(system: System) {
+        if (this._preRegister(system.constructor as Ctor<System>)) {
             return this;
         }
 
@@ -52,8 +51,8 @@ export class SystemManager {
      * @param (object) system 系统实例
      * @param (function) beforeSystemClass 系统类
      */
-    public registerBefore(system, beforeSystemClass) {
-        if (this._preRegister(system.constructor)) {
+    public registerBefore(system: System, beforeSystemClass) {
+        if (this._preRegister(system.constructor as Ctor<System>)) {
             return this;
         }
 
@@ -87,8 +86,8 @@ export class SystemManager {
      * @param (object) system 系统实例
      * @param (function) afterSystemClass 系统类
      */
-    public registerAfter(system, afterSystemClass) {
-        if (this._preRegister(system.constructor)) {
+    public registerAfter(system: System, afterSystemClass: Ctor<System>) {
+        if (this._preRegister(system.constructor as Ctor<System>)) {
             return this;
         }
 
@@ -122,7 +121,7 @@ export class SystemManager {
      * @param (function | string) systemClass 系统类 | 系统名
      * @return (object) system 当前系统
      */
-    public get(systemClass) {
+    public get(systemClass: Ctor<System>) {
         const systemName = this._ecs.getClassName(systemClass);
         return this._systemMap.get(systemName);
     }
@@ -134,7 +133,7 @@ export class SystemManager {
     public getAll() {
         const systems = [];
 
-        for (let system of this._systemMap.values()) {
+        for (const system of this._systemMap.values()) {
             systems.push(system);
         }
 
@@ -145,7 +144,7 @@ export class SystemManager {
      * 检测系统是否存在
      * @param (function | string) systemClass 系统类 | 系统名
      */
-    public has(systemClass) {
+    public has(systemClass: Ctor<System>) {
         const systemName = this._ecs.getClassName(systemClass);
 
         return this._systemMap.has(systemName);
@@ -155,12 +154,11 @@ export class SystemManager {
      * 激活系统
      * @param (function | string) systemClass 系统类 | 系统名
      */
-    public enable(systemClass) {
+    public enable(systemClass: Ctor<System>) {
         const system = this.get(systemClass);
 
-        if (system === undefined) {
-            console.warn('Enable system error.');
-
+        if (!system) {
+            console.warn(`cant find system for ${systemClass}`);
             return;
         }
 
@@ -171,12 +169,11 @@ export class SystemManager {
      * 禁用系统
      * @param (function | string) systemClass 系统类 | 系统名
      */
-    public disable(systemClass) {
+    public disable(systemClass: Ctor<System>) {
         const system = this.get(systemClass);
 
-        if (system === undefined) {
-            console.warn('Disable system error.');
-
+        if (!system) {
+            console.warn(`cant find system for ${systemClass}`);
             return;
         }
 
@@ -187,25 +184,22 @@ export class SystemManager {
      * 移除系统
      * @param (function | string) systemClass 系统类 | 系统名
      */
-    public remove(systemClass) {
+    public remove(systemClass: Ctor<System>) {
         const system = this.get(systemClass);
 
-        if (system === undefined) {
-            console.warn('Remove system error.');
-
+        if (!system) {
+            console.warn(`cant find system for ${systemClass}`);
             return;
         }
 
         const systemName = this._ecs.getClassName(systemClass);
-
         this._systemMap.delete(systemName);
-
         system.uninitialize();
     }
 
-    // 清空系统
+    /** 清空系统 */
     public clear() {
-        for (const [systemName, system] of this._systemMap) {
+        for (const [, system] of this._systemMap) {
             if (system) {
                 system.uninitialize();
             }
@@ -219,23 +213,20 @@ export class SystemManager {
      * @param (number) dt 帧间隔时间
      */
     public update(dt: number) {
-        for (const [systemName, system] of this._systemMap) {
+        for (const [, system] of this._systemMap) {
             if (system && system.enabled && !system.started) {
-                this._currentSystem = system;
                 system.started = true;
             }
         }
 
-        for (const [systemName, system] of this._systemMap) {
+        for (const [, system] of this._systemMap) {
             if (system && system.enabled && system.started) {
-                this._currentSystem = system;
                 system.update(dt);
             }
         }
 
-        for (const [systemName, system] of this._systemMap) {
+        for (const [, system] of this._systemMap) {
             if (system && system.enabled && system.started) {
-                this._currentSystem = system;
                 system.lateUpdate(dt);
             }
         }

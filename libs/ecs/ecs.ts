@@ -1,26 +1,17 @@
-import worker from './worker';
-import { Mediator } from './Mediator';
-
-import { Input } from './input';
-
-import { Pool } from './Pool';
-
-import { WorkerManager } from './WorkerManager';
-
 import { ComponentManager } from './ComponentManager';
-import { createComponentClass } from './Component';
-
+import { Entity } from './Entity';
 import { EntityManager } from './EntityManager';
-import { createEntityClass } from './Entity';
-
+import { Input } from './input';
+import { Mediator } from './Mediator';
+import { Pool } from './Pool';
 import { SystemManager } from './SystemManager';
-import { createSystemClass } from './System';
+
+export { Component } from './Component';
+export { System } from './System';
 
 export class ECS {
     // UI
     public _ui = null;
-    // worker
-    public worker = worker;
     // 中介
     public mediator = new Mediator(this);
 
@@ -30,23 +21,14 @@ export class ECS {
     // 对象池
     public pool = new Pool(this);
 
-    // worker管理器
-    public workerManager = new WorkerManager(this);
-
     // 组件管理器
     public componentManager = new ComponentManager(this);
-    // 组件类
-    public Component = createComponentClass(this);
 
     // 实体管理器
     public entityManager = new EntityManager(this);
-    // 实体类
-    public Entity = createEntityClass(this);
 
     // 系统管理器
     public systemManager = new SystemManager(this);
-    // 系统类
-    public System = createSystemClass(this);
 
     /*
      * 设置UI
@@ -71,7 +53,7 @@ export class ECS {
      * @param {object} Systems 系统类列表
      * @param {object} keyCode 输入码
      */
-    public init({ ui, Workers, Systems, keyCode }) {
+    public init({ ui, Systems, keyCode }) {
         if (!!ui) {
             this._ui = ui;
         }
@@ -80,21 +62,12 @@ export class ECS {
             this.input.keyCode = keyCode;
         }
 
-        if (!!Workers) {
-            for (const name in Workers) {
-                if (!Workers.hasOwnProperty(name)) {
-                    continue;
-                }
-                this.workerManager.register(name, Workers[name]);
-            }
-        }
-
         if (!!Systems) {
             for (const name in Systems) {
                 if (!Systems.hasOwnProperty(name)) {
                     continue;
                 }
-                this.systemManager.register(new Systems[name]());
+                this.systemManager.register(new Systems[name](this));
             }
         }
     }
@@ -119,8 +92,6 @@ export class ECS {
 
         this.entityManager.clear();
 
-        this.workerManager.closeAll();
-
         this.pool.clear();
     }
 
@@ -130,9 +101,10 @@ export class ECS {
      * @param {object} data 数据
      */
     public send(systemClass, data) {
-        const system = this.systemManager.get(systemClass);
-
-        system.onReceive(data);
+        this.mediator.collect({
+            system: systemClass,
+            data,
+        });
     }
 
     /*
@@ -165,19 +137,7 @@ export class ECS {
 
         return s.join('');
     }
-}
-
-const ecs = new ECS();
-
-export default ecs;
-
-if (typeof window !== 'undefined') {
-    // exports to window
-    window.ecs = ecs;
-
-    window.addEventListener('beforeunload', evt => {
-        ecs.worker.terminate();
-
-        ecs.destroy();
-    });
+    public createEntity(entityName = 'default', entity_id?: string) {
+        return new Entity(this, entityName, entity_id);
+    }
 }

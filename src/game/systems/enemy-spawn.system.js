@@ -1,15 +1,10 @@
-// 公共
-import * as common from '../common.game.js';
 // 组件
 import Components from '../components.game.js';
+import { System } from 'ecs/ecs';
 
-export default class EnemySpawnSystem extends ecs.System {
+export default class EnemySpawnSystem extends System {
     static get name() {
         return 'EnemySpawnSystem';
-    }
-
-    constructor() {
-        super();
     }
 
     onLoad() {}
@@ -47,6 +42,7 @@ export default class EnemySpawnSystem extends ecs.System {
         y,
         speed,
     }) {
+        const { _ecs } = this;
         const worldEntity = this._ecs.entityManager.first('World');
         const worldShape = worldEntity.getComp(Components.Shape);
 
@@ -70,7 +66,7 @@ export default class EnemySpawnSystem extends ecs.System {
             speed,
         });
 
-        const enemyEntity = new ecs.Entity('Enemy')
+        _ecs.createEntity('Enemy')
             .addComp(enemyOwner)
             .addComp(enemyProp)
             .addComp(enemyShape)

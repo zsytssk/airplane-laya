@@ -1,14 +1,11 @@
 // 组件
 import Components from '../components.game.js';
+import { System } from 'ecs/ecs';
 
 // 对战开始
-export default class BattleStartSystem extends ecs.System {
+export default class BattleStartSystem extends System {
     static get name() {
         return 'BattleStartSystem';
-    }
-
-    constructor() {
-        super();
     }
 
     onLoad() {}
@@ -27,12 +24,13 @@ export default class BattleStartSystem extends ecs.System {
      * @param {number} height 高度
      */
     spawnWorldEntity({ width, height }) {
+        const { _ecs } = this;
         const worldShape = new Components.Shape({
             width,
             height,
         });
 
-        const worldEntity = new ecs.Entity('World').addComp(worldShape);
+        const worldEntity = _ecs.createEntity('World').addComp(worldShape);
     }
 
     /*
@@ -62,6 +60,7 @@ export default class BattleStartSystem extends ecs.System {
         y,
         speed,
     }) {
+        const { _ecs } = this;
         const playerOwner = new Components.Owner(id, true);
         const playerProp = new Components.BasicsProp({
             name,
@@ -81,7 +80,8 @@ export default class BattleStartSystem extends ecs.System {
             speed,
         });
 
-        const playerEntity = new ecs.Entity('Player')
+        const playerEntity = _ecs
+            .createEntity('Player')
             .addComp(playerOwner)
             .addComp(playerProp)
             .addComp(playerShape)

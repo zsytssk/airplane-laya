@@ -1,26 +1,18 @@
-// 实体管理器
+import { ECS } from './ecs';
+import { Component } from './Component';
+import { Entity } from './Entity';
+
+type EntityMap = Map<string, Entity>;
+/** 实体管理器 */
 export class EntityManager {
-    private _ecs: any;
+    private _ecs: ECS;
     // 实体集合
-    private _entityMaps: Map<string, any> = new Map();
+    private _entityMaps: Map<string, EntityMap> = new Map();
     // 脏标记集合
-    private _dirtyMaps: Map<string, any> = new Map();
-    constructor(ecs) {
+    private _dirtyMaps: Map<string, EntityMap> = new Map();
+    constructor(ecs: ECS) {
         // ecs
         this._ecs = ecs;
-    }
-
-    /*
-     * 检查是否已注册
-     * @param {string} entityName 实体名
-     * @return {boolean} isRegister 是否已注册
-     */
-    public _preRegister(entityName) {
-        if (this.getMap(entityName)) {
-            return true;
-        }
-
-        return false;
     }
 
     /*
@@ -28,58 +20,21 @@ export class EntityManager {
      * @param {string} entityName 实体名
      * @return {object} this chain
      */
-    public register(entityName) {
-        if (arguments.length > 1) {
-            return this.registerMany(Array.from(arguments));
-        }
+    public register(...entity_list: string[]) {
+        for (const entityName of entity_list) {
+            if (typeof entityName !== 'string') {
+                console.warn('The entity name parameter must be a string');
+                return;
+            }
 
-        if (Array.isArray(entityName)) {
-            return this.registerMany(entityName);
-        }
-
-        if (this._preRegister(entityName)) {
-            return this;
-        }
-
-        if (typeof entityName !== 'string') {
-            console.warn('The entity name parameter must be a string');
-
-            return this;
-        }
-
-        if (!this._entityMaps.has(entityName)) {
+            if (this._entityMaps.has(entityName)) {
+                return;
+            }
             const entityMap = new Map();
             this._entityMaps.set(entityName, entityMap);
         }
 
-        return this;
-    }
-
-    /*
-     * 批量注册
-     * @param {array} entityNames 实体名
-     * @return {object} this chain
-     */
-    public registerMany(entityNames) {
-        if (!Array.isArray(entityNames)) {
-            console.warn('The entity names parameter must be an array');
-
-            return this;
-        }
-
-        if (entityNames.length < 1) {
-            console.warn(
-                'The entity names array must contain at least one entityName to register',
-            );
-
-            return this;
-        }
-
-        entityNames.map(entityName => {
-            this.register(entityName);
-        });
-
-        return this;
+        return;
     }
 
     /*
@@ -87,7 +42,7 @@ export class EntityManager {
      * @param {string} entityName 实体名
      * @return {object} entityMap 实体集合
      */
-    public getMap(entityName) {
+    public getMap(entityName: string) {
         return this._entityMaps.get(entityName);
     }
 
@@ -97,7 +52,7 @@ export class EntityManager {
      * @param {string} entityId 实体ID
      * @return {object} entity 实体
      */
-    public get(entityName, entityId) {
+    public get(entityName: string, entityId: string) {
         const entityMap = this.getMap(entityName);
 
         if (entityMap === undefined) {
@@ -110,39 +65,35 @@ export class EntityManager {
     }
 
     /*
-     * 根据组件类，获取实体
+     * 获取实体:> 匹配 name = entityName, 拥有特定类型的 compClasses
      * @param {string} entityId 实体ID
      * @param {array} compClasses 组件类
-     * @return {array} entitys 实体
+     * @return {array} entity_list 实体
      */
-    public filter(entityName, compClasses = []) {
-        if (!Array.isArray(compClasses)) {
-            console.warn('Component Classes must be an array');
-
-            return;
-        }
-
+    public filter(
+        entityName: string,
+        compClasses: Array<Ctor<Component>> = [],
+    ) {
         const entityMap = this.getMap(entityName);
 
-        if (entityMap === undefined) {
-            console.warn('Entity map does not exist using the name');
-
+        if (!entityMap) {
+            console.warn(`cant find entityMap for name=${entityName} `);
             return;
         }
 
-        const entitys = [];
+        const entity_list: Entity[] = [];
 
-        for (let entity of entityMap.values()) {
+        for (const entity of entityMap.values()) {
             const result = compClasses.filter(compClass => {
                 return this._ecs.componentManager.has(compClass, entity.id);
             });
 
             if (result.length === compClasses.length) {
-                entitys.push(entity);
+                entity_list.push(entity);
             }
         }
 
-        return entitys;
+        return entity_list;
     }
 
     /*
@@ -150,7 +101,7 @@ export class EntityManager {
      * @param {string} entityName 实体名
      * @return {object} entity 实体
      */
-    public first(entityName) {
+    public first(entityName: string) {
         const entityMap = this.getMap(entityName);
 
         if (entityMap === undefined) {
@@ -176,26 +127,28 @@ export class EntityManager {
      * @param {object} data 数据
      * @return {array} entitys 实体
      */
-    public find(entityName, compClass, data) {
+    public find(entityName: string, compClass: Ctor<Component>, data: any) {
         const entityMap = this.getMap(entityName);
 
         if (entityMap === undefined) {
-            console.warn('Entity map does not exist using the name');
+            console.warn(`cant find entityMap for name=${entityName}`);
 
             return;
         }
 
-        let result = null;
+        let result: Entity;
 
-        for (let entity of entityMap.values()) {
+        for (const entity of entityMap.values()) {
             if (entity.hasComp(compClass)) {
                 let isMatch = true;
                 const comp = entity.getComp(compClass);
 
-                for (let key in data) {
+                for (const key in data) {
+                    if (!data.hasOwnProperty(key)) {
+                        continue;
+                    }
                     if (!(comp[key] && comp[key] === data[key])) {
                         isMatch = false;
-
                         break;
                     }
                 }
@@ -220,7 +173,7 @@ export class EntityManager {
         const entityMap = this.getMap(entity.name);
 
         if (entityMap === undefined) {
-            console.warn('Entity map does not exist using the name');
+            console.warn(`cant find entityMap for name=${entity.name}`);
 
             return this;
         }
@@ -239,8 +192,8 @@ export class EntityManager {
     public has(entityName, entityId) {
         const entityMap = this.getMap(entityName);
 
-        if (entityMap === undefined) {
-            console.warn('Entity map does not exist using the name');
+        if (!entityMap) {
+            console.warn(`cant find entityMap for name=${entityName}`);
 
             return false;
         }
@@ -253,7 +206,7 @@ export class EntityManager {
      * @param {object} entity 实体实例
      * @return {boolean} isExist 实体是否存在
      */
-    public hasEntity(entity) {
+    public hasEntity(entity: Entity) {
         return this.has(entity.name, entity.id);
     }
 
@@ -263,11 +216,11 @@ export class EntityManager {
      * @param {string} entityId 实体ID
      * @return {object} this chain
      */
-    public destroy(entityName, entityId) {
+    public destroy(entityName: string, entityId: string) {
         const entityMap = this.getMap(entityName);
 
-        if (entityMap === undefined) {
-            console.warn('Entity map does not exist using the name');
+        if (!entityMap) {
+            console.warn(`cant find entityMap for name=${entityName}`);
 
             return this;
         }
@@ -288,7 +241,7 @@ export class EntityManager {
      * @param {object} entity 实体实例
      * @return {object} this chain
      */
-    public destroyEntity(entity) {
+    public destroyEntity(entity: Entity) {
         this.destroy(entity.name, entity.id);
 
         return this;
@@ -299,8 +252,8 @@ export class EntityManager {
      * @return {object} this chain
      */
     public clear() {
-        for (let entityMap of this._entityMaps.values()) {
-            for (let entity of entityMap.values()) {
+        for (const entityMap of this._entityMaps.values()) {
+            for (const entity of entityMap.values()) {
                 this._ecs.componentManager.clear(entity.id);
             }
 
@@ -343,7 +296,7 @@ export class EntityManager {
      * @param {string} compName 组件名称
      * @param {array} attrs 属性
      */
-    public setDirty(entityTag, compName, attrs = 'all') {
+    public setDirty(entityTag: string, compName: string, attrs = 'all') {
         let comps = null;
 
         if (this._dirtyMaps.has(entityTag)) {
@@ -353,7 +306,7 @@ export class EntityManager {
         }
 
         if (comps.has(compName) && attrs !== 'all') {
-            let oldAttrs = comps.get(compName);
+            const oldAttrs = comps.get(compName);
 
             if (oldAttrs !== 'all' && Array.isArray(attrs)) {
                 attrs = oldAttrs.concat(attrs);

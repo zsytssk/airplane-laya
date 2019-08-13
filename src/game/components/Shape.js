@@ -1,6 +1,8 @@
+import { Component } from 'ecs/ecs';
+
 // 形状
-export default class Shape extends ecs.Component {
-	static get name() {
+export default class Shape extends Component {
+    static get name() {
         return 'Shape';
     }
 
@@ -9,15 +11,11 @@ export default class Shape extends ecs.Component {
      * @param (number) height 高
      * @param (number) radius 半径
      */
-    constructor({
-    	width = 0,
-    	height = 0,
-    	radius = 0
-    } = {}) {
+    constructor({ width = 0, height = 0, radius = 0 } = {}) {
         super();
 
-		this.width = width;
-		this.height = height;
-    	this.radius = radius;
+        this.width = width;
+        this.height = height;
+        this.radius = radius;
     }
 }

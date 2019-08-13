@@ -1,24 +1,27 @@
 import { ECS } from './ecs';
+import { System } from './System';
 
-// 系统消息中介
+type MsgItem = {
+    system: Ctor<System>;
+    data: any;
+};
+/** 系统消息中介 */
 export class Mediator {
     private _ecs: ECS;
-    private _list = [];
+    private _list: MsgItem[] = [];
     constructor(ecs: ECS) {
         this._ecs = ecs;
-        // 初始化
-        this.init();
     }
 
-    // 初始化
-    private init() {
-        this._ecs.worker.onmessage = message => {
-            const data = message.data;
-
-            this._collector(data);
-        };
+    /*
+     * 收集
+     * @param (object) data 数据
+     * param.system (string) 系统名称
+     * param.data (object) 传递数据
+     */
+    public collect(data: MsgItem) {
+        this._list.push(data);
     }
-
     /*
      * 更新
      * @param (number) dt 上一帧时间间隔
@@ -42,20 +45,4 @@ export class Mediator {
     public clear() {
         this._list = [];
     }
-
-    /*
-     * 收集
-     * @param (object) data 数据
-     * param.system (string) 系统名称
-     * param.data (object) 传递数据
-     */
-    private _collector(data) {
-        this._list.push(data);
-    }
-
-    // 筛选
-    private _filter() {}
-
-    // 执行
-    private _execute() {}
 }

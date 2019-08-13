@@ -1,9 +1,11 @@
+import { Component } from 'ecs/ecs';
+
 // 位置
-export default class Position extends ecs.Component {
-	static get name() {
+export default class Position extends Component {
+    static get name() {
         return 'Position';
     }
-    
+
     /*
      * @param (number) x x轴坐标
      * @param (number) y y轴坐标
@@ -12,6 +14,6 @@ export default class Position extends ecs.Component {
         super();
 
         this.x = x;
-    	this.y = y;
+        this.y = y;
     }
 }

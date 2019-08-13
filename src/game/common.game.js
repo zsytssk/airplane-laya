@@ -10,7 +10,7 @@ import Components from './components.game.js';
  * @param {number} height 高度
  * @param {object} result
  */
-export function boundaryDetection(x, y, width, height) {
+export function boundaryDetection(ecs, x, y, width, height) {
     const worldEntity = ecs.entityManager.first('World');
     const worldShape = worldEntity.getComp(Components.Shape);
 

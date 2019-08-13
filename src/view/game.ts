@@ -1,4 +1,4 @@
-import ecs from 'ecs/ecs';
+import { ECS } from 'ecs/ecs';
 import Systems from 'game/systems.game';
 import { Honor } from 'honor';
 import { ui } from 'ui/layaMaxUI';
@@ -13,6 +13,7 @@ export default class GameScene extends ui.scenes.gameUI {
     private bulletPool = new PoolManager(bulletUI);
     private enemyPool = new PoolManager(enemyUI);
     private panel = new Laya.Box();
+    private ecs: ECS;
     constructor() {
         super();
         // 玩家组件
@@ -46,17 +47,20 @@ export default class GameScene extends ui.scenes.gameUI {
     // 初始化
     public init() {
         // 初始化ecs
+        const ecs = new ECS();
         ecs.init({
             ui: this,
             keyCode: keycode,
             Systems,
         } as any);
+        this.ecs = ecs;
     }
 
     // 初始化事件
     public initEvent() {
+        const { ecs } = this;
         this.panel.on(Laya.Event.MOUSE_DOWN, this, (evt: Laya.Event) => {
-            ecs.input.set(ecs.input.keyCode.MOVE, {
+            this.ecs.input.set(ecs.input.keyCode.MOVE, {
                 x: evt.stageX,
                 y: evt.stageY,
             });
@@ -72,6 +76,7 @@ export default class GameScene extends ui.scenes.gameUI {
 
     // 开始游戏
     public gameStart() {
+        const { ecs } = this;
         const screenSize = Laya.stage;
         const playerSize = this.player;
 
@@ -102,6 +107,8 @@ export default class GameScene extends ui.scenes.gameUI {
 
     // 开火
     public openFire() {
+        const { ecs } = this;
+
         const firepowers = this.player.getFirepowerInfo(1);
 
         for (const item of firepowers) {
@@ -115,6 +122,8 @@ export default class GameScene extends ui.scenes.gameUI {
 
     // 敌军
     public enemyFactory() {
+        const { ecs } = this;
+
         const screenSize = Laya.stage;
         const enemySize = this.enemyPool.getSize();
         const { width: world_width, height: world_height } = this;

@@ -1,13 +1,10 @@
 // 组件
 import Components from '../components.game.js';
+import { System } from 'ecs/ecs';
 
-export default class OpenFireSystem extends ecs.System {
+export default class OpenFireSystem extends System {
     static get name() {
         return 'OpenFireSystem';
-    }
-
-    constructor() {
-        super();
     }
 
     onLoad() {}
@@ -33,8 +30,8 @@ export default class OpenFireSystem extends ecs.System {
      * @param {number} speed 移动速度
      */
     spawnAmmoEntity({ id, damage = 0, model, x, y, speed }) {
-        const worldEntity = this._ecs.entityManager.first('World');
-        const worldShape = worldEntity.getComp(Components.Shape);
+        const { _ecs } = this;
+        const worldEntity = _ecs.entityManager.first('World');
 
         const ammoOwner = new Components.Owner(id, true);
         const ammoProp = new Components.BasicsProp({
@@ -50,7 +47,7 @@ export default class OpenFireSystem extends ecs.System {
             speed,
         });
 
-        const ammoEntity = new ecs.Entity('Ammo')
+        _ecs.createEntity('Ammo')
             .addComp(ammoOwner)
             .addComp(ammoProp)
             .addComp(ammoPosition)

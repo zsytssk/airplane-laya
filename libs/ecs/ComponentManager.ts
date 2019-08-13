@@ -1,8 +1,12 @@
+import { ECS } from './ecs';
+import { Component } from './Component';
+
+type ComponentMap = Map<string, Component>;
 // 组件管理器
 export class ComponentManager {
     private _ecs: any;
-    private _compMaps: Map<string, any>;
-    constructor(ecs) {
+    private _compMaps: Map<string, ComponentMap>;
+    constructor(ecs: ECS) {
         // ecs
         this._ecs = ecs;
 
@@ -15,7 +19,7 @@ export class ComponentManager {
      * @param (function) compClass 组件类
      * @return (boolean) isRegister 是否已注册
      */
-    public _preRegister(compClass) {
+    public _preRegister(compClass: Ctor<Component>) {
         if (this.getMap(compClass)) {
             return true;
         }
@@ -27,7 +31,7 @@ export class ComponentManager {
      * 注册组件
      * @param (function) compClass 组件类
      */
-    public register(compClass) {
+    public register(compClass: Ctor<Component>) {
         if (this._preRegister(compClass)) {
             return;
         }
@@ -43,7 +47,7 @@ export class ComponentManager {
         }
 
         if (!this._compMaps.has(compName)) {
-            const compMap = new Map();
+            const compMap = new Map() as ComponentMap;
             this._compMaps.set(compName, compMap);
         }
     }
@@ -65,7 +69,7 @@ export class ComponentManager {
      * @param (string) entityId 实体ID
      * @return (object) comp 当前组件
      */
-    public get(compClass, entityId) {
+    public get(compClass: Ctor<Component>, entityId: string) {
         const compMap = this.getMap(compClass);
 
         if (compMap === undefined) {
@@ -80,8 +84,8 @@ export class ComponentManager {
      * @param (string) entityId 实体ID
      * @return (array) comps 所有组件
      */
-    public getAll(entityId) {
-        const comps = [];
+    public getAll(entityId: string) {
+        const comps = [] as Component[];
 
         for (const compMap of this._compMaps.values()) {
             if (compMap.has(entityId)) {
@@ -99,8 +103,8 @@ export class ComponentManager {
      * @param (object) comp 组件实例
      * @param (string) entityId 实体ID
      */
-    public set(comp, entityId) {
-        this.register(comp.constructor);
+    public set(comp: Component, entityId: string) {
+        this.register(comp.constructor as Ctor<Component>);
 
         const compMap = this.getMap(comp.constructor);
 
@@ -119,12 +123,11 @@ export class ComponentManager {
      * @param (string) entityId 实体ID
      * @return (boolean) hasComp 是否存在
      */
-    public has(compClass, entityId) {
+    public has(compClass: Ctor<Component>, entityId: string) {
         const compMap = this.getMap(compClass);
 
         if (compMap === undefined) {
             // console.warn('Component map does not exist using the name');
-
             return false;
         }
 
@@ -136,12 +139,11 @@ export class ComponentManager {
      * @param (function | string) compClass 组件类 | 组件名
      * @param (string) entityId 实体ID
      */
-    public remove(compClass, entityId) {
+    public remove(compClass: Ctor<Component>, entityId: string) {
         const compMap = this.getMap(compClass);
 
         if (compMap === undefined) {
             console.warn('Component map does not exist using the name');
-
             return;
         }
 
@@ -152,7 +154,7 @@ export class ComponentManager {
      * 清空组件
      * @param (string) entityId 实体ID
      */
-    public clear(entityId) {
+    public clear(entityId: string) {
         for (const compMap of this._compMaps.values()) {
             this._destroy(compMap, entityId);
         }
@@ -161,10 +163,6 @@ export class ComponentManager {
     // 清空所有组件
     public clearAll() {
         for (const compMap of this._compMaps.values()) {
-            for (const comp of compMap.values()) {
-                comp.destroy();
-            }
-
             compMap.clear();
         }
 
@@ -176,11 +174,8 @@ export class ComponentManager {
      * @param (object) compMap 组件集合
      * @param (string) entityId 实体ID
      */
-    public _destroy(compMap, entityId) {
+    private _destroy(compMap: ComponentMap, entityId: string) {
         if (compMap.has(entityId)) {
-            const comp = compMap.get(entityId);
-            comp.destroy();
-
             compMap.delete(entityId);
         }
     }

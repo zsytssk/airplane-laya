@@ -2,19 +2,14 @@
 import * as common from '../common.game.js';
 // 组件
 import Components from '../components.game.js';
+import { System } from 'ecs/ecs';
 
-export default class AmmoMovementSystem extends ecs.System {
+export default class AmmoMovementSystem extends System {
     static get name() {
         return 'AmmoMovementSystem';
     }
 
-    constructor() {
-        super();
-    }
-
-    onLoad() {
-
-    }
+    onLoad() {}
 
     onUpdate() {
         this.move();
@@ -36,20 +31,27 @@ export default class AmmoMovementSystem extends ecs.System {
             if (ammoTween.enabled) {
                 const ammoPosition = ammoEntity.getComp(Components.Position);
 
-                const { x, y } = common.tween(ammoPosition, ammoTween, ammoTween.speed);
+                const { x, y } = common.tween(
+                    ammoPosition,
+                    ammoTween,
+                    ammoTween.speed,
+                );
 
                 ammoEntity.setCompsState(Components.Position, {
                     x,
-                    y
+                    y,
                 });
 
-                if (ammoPosition.x === ammoTween.x && ammoPosition.y === ammoTween.y) {
+                if (
+                    ammoPosition.x === ammoTween.x &&
+                    ammoPosition.y === ammoTween.y
+                ) {
                     ammoEntity.setCompsState(Components.Tween, {
-                        enabled: false
+                        enabled: false,
                     });
 
                     ammoEntity.setCompsState(Components.Owner, {
-                        enabled: false
+                        enabled: false,
                     });
                 }
             }
