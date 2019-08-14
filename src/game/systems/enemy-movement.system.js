@@ -48,9 +48,7 @@ export default class EnemyMovementSystem extends System {
                         enabled: false,
                     });
 
-                    enemyEntity.setCompsState(Components.Owner, {
-                        enabled: false,
-                    });
+                    enemyEntity.terminate();
                 }
             }
         }

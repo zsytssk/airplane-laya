@@ -1,15 +1,16 @@
 import { ECS } from './ecs';
 import { Component } from './Component';
-import { Entity } from './Entity';
+import { Entity, CompChangeAttrs } from './Entity';
 
 type EntityMap = Map<string, Entity>;
+export type DirtyCompMap = Map<Component, CompChangeAttrs>;
 /** 实体管理器 */
 export class EntityManager {
     private _ecs: ECS;
     // 实体集合
     private _entityMaps: Map<string, EntityMap> = new Map();
     // 脏标记集合
-    private _dirtyMaps: Map<string, EntityMap> = new Map();
+    private _dirtyMaps: Map<string, DirtyCompMap> = new Map();
     constructor(ecs: ECS) {
         // ecs
         this._ecs = ecs;
@@ -167,7 +168,7 @@ export class EntityManager {
      * @param {object} entity 实体实例
      * @return {object} entity 实体
      */
-    public set(entity) {
+    public set(entity: Entity) {
         this.register(entity.name);
 
         const entityMap = this.getMap(entity.name);
@@ -189,7 +190,7 @@ export class EntityManager {
      * @param {string} entityId 实体ID
      * @return {boolean} isExist 实体是否存在
      */
-    public has(entityName, entityId) {
+    public has(entityName: string, entityId: string) {
         const entityMap = this.getMap(entityName);
 
         if (!entityMap) {
@@ -269,24 +270,18 @@ export class EntityManager {
 
     // 获取脏标记
     public getDirty() {
-        const dirty = new Map();
+        const dirty = new Map() as Map<string, DirtyCompMap>;
 
         for (const [entityId, comps] of this._dirtyMaps.entries()) {
-            const arr = [];
-
-            for (const [compName, attrs] of comps.entries()) {
-                if (Array.isArray(attrs)) {
-                    arr.push(`${compName}@${attrs.join('-')}`);
-                } else {
-                    arr.push(`${compName}@${attrs}`);
-                }
+            const dirty_comp = new Map();
+            for (const [comp, attrs] of comps.entries()) {
+                dirty_comp.set(comp, attrs);
             }
 
-            dirty.set(entityId, arr);
+            dirty.set(entityId, dirty_comp);
         }
 
         this._dirtyMaps.clear();
-
         return dirty;
     }
 
@@ -296,32 +291,21 @@ export class EntityManager {
      * @param {string} compName 组件名称
      * @param {array} attrs 属性
      */
-    public setDirty(entityTag: string, compName: string, attrs = 'all') {
-        let comps = null;
+    public setDirty(
+        entityTag: string,
+        comp: Component,
+        attrs = 'all' as CompChangeAttrs,
+    ) {
+        let comp_map: DirtyCompMap;
 
         if (this._dirtyMaps.has(entityTag)) {
-            comps = this._dirtyMaps.get(entityTag);
+            comp_map = this._dirtyMaps.get(entityTag);
+            comp_map.set(comp, attrs);
         } else {
-            comps = new Map();
+            comp_map = new Map();
+            comp_map.set(comp, attrs);
+            this._dirtyMaps.set(entityTag, comp_map);
         }
-
-        if (comps.has(compName) && attrs !== 'all') {
-            const oldAttrs = comps.get(compName);
-
-            if (oldAttrs !== 'all' && Array.isArray(attrs)) {
-                attrs = oldAttrs.concat(attrs);
-
-                // 除重复属性名
-                attrs = new Set(attrs);
-                attrs = [...attrs];
-
-                comps.set(compName, attrs);
-            }
-        } else {
-            comps.set(compName, attrs);
-        }
-
-        this._dirtyMaps.set(entityTag, comps);
     }
 
     /*

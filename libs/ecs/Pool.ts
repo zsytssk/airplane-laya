@@ -22,7 +22,7 @@ export class Pool {
     set resize(val) {
         this._maxCount = val;
 
-        for (let pool of this._poolMap.values()) {
+        for (const pool of this._poolMap.values()) {
             pool.length = val;
         }
     }
@@ -82,15 +82,15 @@ export class Pool {
      * @return (number) nums 可用对象数量
      */
     public size(sign) {
-        let nums = 0;
+        let num = 0;
 
         if (this._poolMap.has(sign)) {
             const pool = this._poolMap.get(sign);
 
-            nums = pool.length;
+            num = pool.length;
         }
 
-        return nums;
+        return num;
     }
 
     /*

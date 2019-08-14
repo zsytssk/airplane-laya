@@ -7,7 +7,7 @@ export class SystemManager {
     private _ecs: ECS;
 
     // 系统集合
-    private _systemMap: Map<string, System> = new Map();
+    private _systemMap: Map<Ctor<System>, System> = new Map();
     constructor(ecs: ECS) {
         // ecs
         this._ecs = ecs;
@@ -39,77 +39,7 @@ export class SystemManager {
 
         const systems = [...this._systemMap];
 
-        systems.push([system.constructor.name, system]);
-
-        this._systemMap = new Map(systems);
-
-        system.initialize();
-    }
-
-    /*
-     * 注册系统，并添加到指定系统之前，如果没有指定，则添加到系统列表首部
-     * @param (object) system 系统实例
-     * @param (function) beforeSystemClass 系统类
-     */
-    public registerBefore(system: System, beforeSystemClass) {
-        if (this._preRegister(system.constructor as Ctor<System>)) {
-            return this;
-        }
-
-        let index = -1;
-        const systems = [...this._systemMap];
-        const systemName = system.constructor.name;
-        const beforeSystemName = this._ecs.getClassName(beforeSystemClass);
-
-        if (this._preRegister(beforeSystemClass)) {
-            for (let i = 0, l = systems.length; i < l; ++i) {
-                if (systems[i][0] === beforeSystemClass) {
-                    index = i;
-                    systems.splice(index, 0, [systemName, system]);
-
-                    break;
-                }
-            }
-        }
-
-        if (index < 0) {
-            systems.unshift([systemName, system]);
-        }
-
-        this._systemMap = new Map(systems);
-
-        system.initialize();
-    }
-
-    /*
-     * 注册系统，并添加到指定系统之前，如果没有指定，则添加到系统列表尾部
-     * @param (object) system 系统实例
-     * @param (function) afterSystemClass 系统类
-     */
-    public registerAfter(system: System, afterSystemClass: Ctor<System>) {
-        if (this._preRegister(system.constructor as Ctor<System>)) {
-            return this;
-        }
-
-        let index = -1;
-        const systems = [...this._systemMap];
-        const systemName = system.constructor.name;
-        const afterSystemName = this._ecs.getClassName(afterSystemClass);
-
-        if (this._preRegister(afterSystemClass)) {
-            for (let i = 0, len = systems.length; i < len; i++) {
-                if (systems[i][0] === afterSystemName) {
-                    index = i + 1;
-                    systems.splice(index, 0, [systemName, system]);
-
-                    break;
-                }
-            }
-        }
-
-        if (index < 0) {
-            systems.push([systemName, system]);
-        }
+        systems.push([system.constructor as Ctor<System>, system]);
 
         this._systemMap = new Map(systems);
 
@@ -122,8 +52,7 @@ export class SystemManager {
      * @return (object) system 当前系统
      */
     public get(systemClass: Ctor<System>) {
-        const systemName = this._ecs.getClassName(systemClass);
-        return this._systemMap.get(systemName);
+        return this._systemMap.get(systemClass);
     }
 
     /*
@@ -145,9 +74,7 @@ export class SystemManager {
      * @param (function | string) systemClass 系统类 | 系统名
      */
     public has(systemClass: Ctor<System>) {
-        const systemName = this._ecs.getClassName(systemClass);
-
-        return this._systemMap.has(systemName);
+        return this._systemMap.has(systemClass);
     }
 
     /*
@@ -192,8 +119,7 @@ export class SystemManager {
             return;
         }
 
-        const systemName = this._ecs.getClassName(systemClass);
-        this._systemMap.delete(systemName);
+        this._systemMap.delete(systemClass);
         system.uninitialize();
     }
 

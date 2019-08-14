@@ -1,7 +1,6 @@
 // 组件
 import { System } from 'ecs/ecs';
-// 渲染
-import render from '../render.game.js';
+import { EcsEvent } from 'game/ecsEvent';
 
 // 渲染
 export default class RenderSystem extends System {
@@ -13,10 +12,10 @@ export default class RenderSystem extends System {
 
     onUpdate(dt) {
         const dirtyMap = this._ecs.entityManager.getDirty();
-        const entitysMap = new Map();
+        const entityListMap = new Map();
 
         if (dirtyMap.size) {
-            for (const [tag, comps] of dirtyMap.entries()) {
+            for (const [tag, dirty_comp] of dirtyMap.entries()) {
                 const data = tag.split('@');
                 const entityName = data[0];
                 const entityId = data[1];
@@ -27,36 +26,31 @@ export default class RenderSystem extends System {
                 );
 
                 if (!!entity) {
-                    if (!entitysMap.has(entityName)) {
-                        entitysMap.set(entityName, new Map());
+                    if (!entityListMap.has(entityName)) {
+                        entityListMap.set(entityName, new Map());
                     }
 
-                    const entitys = entitysMap.get(entityName);
+                    const entityList = entityListMap.get(entityName);
 
-                    entitys.set(entity, comps);
+                    entityList.set(entity, dirty_comp);
                 }
             }
 
-            if (entitysMap.size) {
-                for (const [entityName, entitys] of entitysMap) {
-                    const funName = `update${entityName}UI`;
-
-                    if (
-                        entitys.size &&
-                        this.__proto__.hasOwnProperty(funName)
-                    ) {
-                        this[funName](entitys);
-
-                        entitys.clear();
+            if (entityListMap.size) {
+                for (const [, entityList] of entityListMap) {
+                    if (entityList.size) {
+                        this._ecs.observer.publish(
+                            EcsEvent.updateUI,
+                            entityList,
+                        );
+                        entityList.clear();
                     }
                 }
 
-                entitysMap.clear();
+                entityListMap.clear();
             }
         }
     }
-
-    onReceive(data) {}
 
     /*
      * 检查组件是否存在
@@ -104,37 +98,5 @@ export default class RenderSystem extends System {
         }
 
         return attrs;
-    }
-
-    /*
-     * 更新UI
-     * @param {object} state 状态
-     */
-    updateUI(state) {
-        this._ecs.ui.updateUI(state);
-    }
-
-    /*
-     * 更新player状态
-     * @param {object} entitys 实体集合
-     */
-    updatePlayerUI(entitys) {
-        render.player(this._ecs, this, entitys);
-    }
-
-    /*
-     * 更新ammo状态
-     * @param {object} entitys 实体集合
-     */
-    updateAmmoUI(entitys) {
-        render.ammo(this._ecs, this, entitys);
-    }
-
-    /*
-     * 更新enemy状态
-     * @param {object} entitys 实体集合
-     */
-    updateEnemyUI(entitys) {
-        render.enemy(this._ecs, this, entitys);
     }
 }

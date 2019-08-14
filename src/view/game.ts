@@ -3,16 +3,22 @@ import Systems from 'game/systems.game';
 import { Honor } from 'honor';
 import { ui } from 'ui/layaMaxUI';
 import { basic, keycode } from './config';
-import { bulletUI, enemyUI, Player } from './item';
+import { bulletUI, enemyUI, Player, updateEnemy, updateAmmo } from './item';
 import { PoolManager } from './Pool.manager';
+import Observer from 'ecs/observer';
+import { EcsEvent } from 'game/ecsEvent';
+import { Entity } from 'ecs/Entity';
+import { DirtyCompMap } from 'ecs/EntityManager';
+import Owner from 'game/components/Owner';
 
 export default class GameScene extends ui.scenes.gameUI {
     private _ammoMap: Map<string, Laya.Sprite>;
     private _enemyMap: Map<string, Laya.Sprite>;
-    private player = new Player();
+    private player: Player;
     private bulletPool = new PoolManager(bulletUI);
     private enemyPool = new PoolManager(enemyUI);
     private panel = new Laya.Box();
+    private observer: Observer;
     private ecs: ECS;
     constructor() {
         super();
@@ -24,7 +30,6 @@ export default class GameScene extends ui.scenes.gameUI {
         this._enemyMap = new Map();
 
         this.addChild(this.panel);
-        this.addChild(this.player);
     }
     public static async preEnter() {
         const game_scene = (await Honor.director.runScene(
@@ -48,30 +53,34 @@ export default class GameScene extends ui.scenes.gameUI {
     public init() {
         // 初始化ecs
         const ecs = new ECS();
+        const observer = new Observer();
         ecs.init({
-            ui: this,
+            observer,
             keyCode: keycode,
             Systems,
         } as any);
         this.ecs = ecs;
+        this.observer = observer;
     }
 
     // 初始化事件
     public initEvent() {
-        const { ecs } = this;
+        const { ecs, observer } = this;
         this.panel.on(Laya.Event.MOUSE_DOWN, this, (evt: Laya.Event) => {
-            this.ecs.input.set(ecs.input.keyCode.MOVE, {
+            this.ecs.input.set(keycode.MOVE, {
                 x: evt.stageX,
                 y: evt.stageY,
             });
         });
 
         this.panel.on(Laya.Event.MOUSE_UP, this, (evt: Laya.Event) => {
-            ecs.input.set(ecs.input.keyCode.MOVE, {
+            ecs.input.set(keycode.MOVE, {
                 x: evt.stageX,
                 y: evt.stageY,
             });
         });
+
+        observer.subscribe(EcsEvent.updateUI, this.updateUI.bind(this));
     }
 
     // 开始游戏
@@ -92,8 +101,8 @@ export default class GameScene extends ui.scenes.gameUI {
                 healthPoint: 100,
                 maxHealthPoint: 100,
                 model: 1,
-                width: playerSize.width,
-                height: playerSize.height,
+                width: 100,
+                height: 100,
                 x: screenSize.width / 2,
                 y: screenSize.height - 100,
                 speed: basic.PLAYER_SPEED,
@@ -152,103 +161,96 @@ export default class GameScene extends ui.scenes.gameUI {
     }
 
     // 更新UI
-    public updateUI(state = {}) {
-        for (const name in state) {
-            if (typeof this[name] === 'function') {
-                const data = state[name];
-
-                this[name](data);
+    public updateUI(state: Map<Entity, DirtyCompMap>) {
+        for (const [entity, attrs] of state) {
+            const { name } = entity;
+            if (name === 'Player') {
+                this.updatePlayer(entity, attrs);
+            }
+            if (name === 'Ammo') {
+                this.updateAmmo(entity, attrs);
+            }
+            if (name === 'Enemy') {
+                this.updateEnemy(entity, attrs);
             }
         }
     }
 
-    // 创建玩家
-    public createPlayer(data) {
-        const { id, name } = data;
-        const vec = this.convertCoordinate(data.x, data.y);
-
-        this.player.setBasicInfo({
-            id,
-            name,
-        });
-
-        this.player.pos(vec.x, vec.y);
-
-        Laya.timer.loop(100, this, () => {
-            this.openFire();
-        });
-        Laya.timer.loop(1000, this, () => {
-            this.enemyFactory();
-        });
-    }
-
     // 更新玩家
-    public updatePlayer(data) {
-        const vec = this.convertCoordinate(data.x, data.y);
-
-        this.player.pos(vec.x, vec.y);
+    public updatePlayer(entity: Entity, dirty_map: DirtyCompMap) {
+        if (!this.player) {
+            this.player = new Player(entity);
+            this.addChild(this.player);
+            Laya.timer.loop(100, this, () => {
+                this.openFire();
+            });
+            Laya.timer.loop(1000, this, () => {
+                this.enemyFactory();
+            });
+        }
+        this.player.updateUI(dirty_map);
     }
 
     // 创建敌方
-    public createEnemy(data) {
-        const vec = this.convertCoordinate(data.x, data.y);
+    public createEnemy(data: Entity) {
         const enemy = this.enemyPool.request();
-        enemy.pos(vec.x, vec.y);
         this.addChild(enemy);
 
-        this._enemyMap.set(data.eid, enemy);
+        this._enemyMap.set(data.id, enemy);
+        return enemy;
     }
 
     // 更新敌方
-    public updateEnemy(data) {
-        if (!this._enemyMap.has(data.eid)) {
-            return;
+    public updateEnemy(entity: Entity, dirty_map: DirtyCompMap) {
+        if (entity.is_terminate) {
+            return this.destroyEnemy(entity);
         }
-
-        const vec = this.convertCoordinate(data.x, data.y);
-        const enemy = this._enemyMap.get(data.eid);
-        enemy.pos(vec.x, vec.y);
+        let enemy = this._enemyMap.get(entity.id);
+        if (!enemy) {
+            enemy = this.createEnemy(entity);
+        }
+        updateEnemy(enemy as ui.scenes.enemyUI, dirty_map);
     }
 
     // 销毁敌方
-    public destroyEnemy(data) {
-        if (!this._enemyMap.has(data.eid)) {
+    public destroyEnemy(entity: Entity) {
+        if (!this._enemyMap.has(entity.id)) {
             return;
         }
 
-        const enemy = this._enemyMap.get(data.eid);
-        this._enemyMap.delete(data.eid);
+        const enemy = this._enemyMap.get(entity.id);
+        this._enemyMap.delete(entity.id);
         this.enemyPool.recover(enemy);
     }
 
     // 创建弹药
-    public createAmmo(data) {
+    public createAmmo(entity: Entity) {
         const ammo = this.bulletPool.request();
-        const vec = this.convertCoordinate(data.x, data.y);
-        ammo.pos(vec.x, vec.y);
         this.addChild(ammo);
 
-        this._ammoMap.set(data.eid, ammo);
+        this._ammoMap.set(entity.id, ammo);
+        return ammo;
     }
 
     // 更新弹药
-    public updateAmmo(data) {
-        if (!this._ammoMap.has(data.eid)) {
-            return;
+    public updateAmmo(entity: Entity, dirty_map: DirtyCompMap) {
+        if (entity.is_terminate) {
+            return this.destroyAmmo(entity);
         }
-
-        const vec = this.convertCoordinate(data.x, data.y);
-        const ammo = this._ammoMap.get(data.eid);
-        ammo.pos(vec.x, vec.y);
+        let ammo = this._ammoMap.get(entity.id);
+        if (!ammo) {
+            ammo = this.createAmmo(entity);
+        }
+        updateAmmo(ammo as ui.scenes.enemyUI, dirty_map);
     }
 
     // 销毁弹药
-    public destroyAmmo(data) {
-        if (!this._ammoMap.has(data.eid)) {
+    public destroyAmmo(entity: Entity) {
+        if (!this._ammoMap.has(entity.id)) {
             return;
         }
 
-        const ammo = this._ammoMap.get(data.eid);
+        const ammo = this._ammoMap.get(entity.id);
 
         this.bulletPool.recover(ammo);
     }

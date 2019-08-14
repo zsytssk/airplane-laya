@@ -5,7 +5,7 @@ type ComponentMap = Map<string, Component>;
 // 组件管理器
 export class ComponentManager {
     private _ecs: any;
-    private _compMaps: Map<string, ComponentMap>;
+    private _compMaps: Map<Ctor<Component>, ComponentMap>;
     constructor(ecs: ECS) {
         // ecs
         this._ecs = ecs;
@@ -15,40 +15,17 @@ export class ComponentManager {
     }
 
     /*
-     * 检测组件是否已注册
-     * @param (function) compClass 组件类
-     * @return (boolean) isRegister 是否已注册
-     */
-    public _preRegister(compClass: Ctor<Component>) {
-        if (this.getMap(compClass)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /*
      * 注册组件
      * @param (function) compClass 组件类
      */
     public register(compClass: Ctor<Component>) {
-        if (this._preRegister(compClass)) {
+        if (this.getCompMap(compClass)) {
             return;
         }
 
-        const compName = compClass.name;
-
-        if (compName === undefined) {
-            console.warn(
-                'The component type does not have a name defined. i.e. a constructor name',
-            );
-
-            return;
-        }
-
-        if (!this._compMaps.has(compName)) {
+        if (!this._compMaps.has(compClass)) {
             const compMap = new Map() as ComponentMap;
-            this._compMaps.set(compName, compMap);
+            this._compMaps.set(compClass, compMap);
         }
     }
 
@@ -57,10 +34,8 @@ export class ComponentManager {
      * @param (function | string) compClass 组件类 | 组件名
      * @return (object) compMap 当前组件集合
      */
-    public getMap(compClass) {
-        const compName = this._ecs.getClassName(compClass);
-
-        return this._compMaps.get(compName);
+    public getCompMap(compClass: Ctor<Component>) {
+        return this._compMaps.get(compClass);
     }
 
     /*
@@ -70,7 +45,7 @@ export class ComponentManager {
      * @return (object) comp 当前组件
      */
     public get(compClass: Ctor<Component>, entityId: string) {
-        const compMap = this.getMap(compClass);
+        const compMap = this.getCompMap(compClass);
 
         if (compMap === undefined) {
             return;
@@ -106,7 +81,7 @@ export class ComponentManager {
     public set(comp: Component, entityId: string) {
         this.register(comp.constructor as Ctor<Component>);
 
-        const compMap = this.getMap(comp.constructor);
+        const compMap = this.getCompMap(comp.constructor as Ctor<Component>);
 
         if (compMap === undefined) {
             console.warn('Component map does not exist using the name');
@@ -124,7 +99,7 @@ export class ComponentManager {
      * @return (boolean) hasComp 是否存在
      */
     public has(compClass: Ctor<Component>, entityId: string) {
-        const compMap = this.getMap(compClass);
+        const compMap = this.getCompMap(compClass);
 
         if (compMap === undefined) {
             // console.warn('Component map does not exist using the name');
@@ -140,7 +115,7 @@ export class ComponentManager {
      * @param (string) entityId 实体ID
      */
     public remove(compClass: Ctor<Component>, entityId: string) {
-        const compMap = this.getMap(compClass);
+        const compMap = this.getCompMap(compClass);
 
         if (compMap === undefined) {
             console.warn('Component map does not exist using the name');

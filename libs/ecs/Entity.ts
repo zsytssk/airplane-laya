@@ -1,11 +1,14 @@
 import { ECS } from './ecs';
 import { Component } from './Component';
+import { genId } from './ecsUtils';
 
+export type CompChangeAttrs = 'all' | string[];
 /** 实体基类 */
 export class Entity {
     protected _ecs: ECS;
     protected _name: string;
     protected _uniqueId: string;
+    public is_terminate: boolean = false;
     constructor(ecs: ECS, entityName = 'default', entity_id?: string) {
         this._ecs = ecs;
 
@@ -13,7 +16,7 @@ export class Entity {
         this._name = entityName;
 
         // 唯一标识
-        this._uniqueId = entity_id || this._ecs.getUUID();
+        this._uniqueId = entity_id || genId();
 
         // 实体添加到实体管理器中
         this._ecs.entityManager.set(this);
@@ -74,48 +77,42 @@ export class Entity {
 
         const comp = this.getComp(compClass);
 
-        if (!!comp) {
-            for (const key in state) {
-                if (comp.hasOwnProperty(key)) {
-                    let isDiff = false;
+        if (!comp) {
+            return;
+        }
 
-                    const oldVal = comp[key];
-                    const newVal = state[key];
+        for (const key in state) {
+            if (comp.hasOwnProperty(key)) {
+                let isDiff = false;
 
-                    if (typeof oldVal === typeof newVal) {
-                        switch (typeof oldVal) {
-                            case 'array':
-                                isDiff =
-                                    oldVal.toString() !== newVal.toString();
+                const oldVal = comp[key];
+                const newVal = state[key];
 
-                                break;
-                            case 'object':
-                                isDiff = true;
-
-                                break;
-                            default:
-                                isDiff = oldVal !== newVal;
-                        }
-                    } else {
-                        isDiff = true;
+                if (typeof oldVal === typeof newVal) {
+                    switch (typeof oldVal) {
+                        case 'object':
+                            isDiff = true;
+                            break;
+                        default:
+                            isDiff = oldVal !== newVal;
                     }
+                } else {
+                    isDiff = true;
+                }
 
-                    if (isDiff || !hasDiff) {
-                        comp[key] = newVal;
+                if (isDiff || !hasDiff) {
+                    comp[key] = newVal;
 
-                        attrs.push(key);
-                    }
+                    attrs.push(key);
                 }
             }
         }
 
         // 添加脏标记
         if (attrs.length) {
-            const compName = this._ecs.getClassName(compClass);
-
             this._ecs.entityManager.setDirty(
                 `${this._name}@${this._uniqueId}`,
-                compName,
+                comp,
                 attrs,
             );
         }
@@ -141,7 +138,7 @@ export class Entity {
         // 添加脏标记
         this._ecs.entityManager.setDirty(
             `${this._name}@${this._uniqueId}`,
-            comp.constructor.name,
+            comp,
         );
 
         return this;
@@ -166,5 +163,8 @@ export class Entity {
         this._ecs.componentManager.clear(this._uniqueId);
 
         return this;
+    }
+    public terminate() {
+        this.is_terminate = true;
     }
 }

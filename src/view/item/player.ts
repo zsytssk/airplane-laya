@@ -1,37 +1,24 @@
 import { ui } from 'ui/layaMaxUI';
+import { Entity } from 'ecs/Entity';
+import { DirtyCompMap } from 'ecs/EntityManager';
+import Position from 'game/components/Position';
 
 export class Player extends ui.scenes.playerUI {
     private missile: Laya.Sprite[] = [];
-    private _uid: any;
-    private _uname: any;
-    constructor() {
+    private entity: Entity;
+    constructor(entity: Entity) {
         super();
-        this._uid = null;
-        this._uname = null;
+        this.entity = entity;
     }
     public onEnable() {
         this.pivotX = -49;
     }
-
-    /*
-     * 获取基础信息
-     * @param {object} result
-     */
-    public getBasicInfo() {
-        return {
-            uid: this._uid,
-            uname: this._uname,
-        };
-    }
-
-    /*
-     * 设置基础信息
-     * @param {number} id ID
-     * @param {string} name 名称
-     */
-    public setBasicInfo({ id, name }) {
-        this._uid = id;
-        this._uname = name;
+    public updateUI(dirty_map: DirtyCompMap) {
+        for (const [comp] of dirty_map) {
+            if (comp instanceof Position) {
+                this.pos(comp.x, comp.y);
+            }
+        }
     }
 
     /*
@@ -47,7 +34,7 @@ export class Player extends ui.scenes.playerUI {
             model: 0,
             x: pos.x,
             y: pos.y,
-            id: this._uid,
+            id: this.entity.id,
         });
 
         if (type > 0) {
@@ -59,7 +46,7 @@ export class Player extends ui.scenes.playerUI {
                     model: 1,
                     x: pos.x,
                     y: pos.y,
-                    id: this._uid,
+                    id: this.entity.id,
                 });
             }
         }

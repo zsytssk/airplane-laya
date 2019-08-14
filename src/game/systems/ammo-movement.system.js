@@ -50,9 +50,7 @@ export default class AmmoMovementSystem extends System {
                         enabled: false,
                     });
 
-                    ammoEntity.setCompsState(Components.Owner, {
-                        enabled: false,
-                    });
+                    ammoEntity.terminate();
                 }
             }
         }
